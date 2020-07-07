@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/consul/agent/agentpb"
-	"github.com/hashicorp/consul/agent/agentpb/config"
 	"github.com/hashicorp/consul/agent/structs"
 	"github.com/hashicorp/consul/internal/go-sso/oidcauth/oidcauthtest"
+	"github.com/hashicorp/consul/proto/autoconf"
+	"github.com/hashicorp/consul/proto/config"
 	"github.com/hashicorp/consul/sdk/testutil"
 	"github.com/hashicorp/consul/tlsutil"
 	"github.com/hashicorp/memberlist"
@@ -80,9 +80,9 @@ func signJWTWithStandardClaims(t *testing.T, privKey string, claims interface{})
 //    require running test servers
 func TestAutoConfigInitialConfiguration(t *testing.T) {
 	type testCase struct {
-		request       agentpb.AutoConfigRequest
-		expected      agentpb.AutoConfigResponse
-		patchResponse func(t *testing.T, srv *Server, resp *agentpb.AutoConfigResponse)
+		request       autoconf.AutoConfigRequest
+		expected      autoconf.AutoConfigResponse
+		patchResponse func(t *testing.T, srv *Server, resp *autoconf.AutoConfigResponse)
 		err           string
 	}
 
@@ -107,13 +107,13 @@ func TestAutoConfigInitialConfiguration(t *testing.T) {
 
 	cases := map[string]testCase{
 		"wrong-datacenter": {
-			request: agentpb.AutoConfigRequest{
+			request: autoconf.AutoConfigRequest{
 				Datacenter: "no-such-dc",
 			},
 			err: `invalid datacenter "no-such-dc" - agent auto configuration cannot target a remote datacenter`,
 		},
 		"unverifiable": {
-			request: agentpb.AutoConfigRequest{
+			request: autoconf.AutoConfigRequest{
 				Node: "test-node",
 				// this is signed using an incorrect private key
 				JWT: signJWTWithStandardClaims(t, altpriv, map[string]interface{}{"consul_node_name": "test-node"}),
@@ -121,18 +121,18 @@ func TestAutoConfigInitialConfiguration(t *testing.T) {
 			err: "Permission denied: Failed JWT authorization: no known key successfully validated the token signature",
 		},
 		"claim-assertion-failed": {
-			request: agentpb.AutoConfigRequest{
+			request: autoconf.AutoConfigRequest{
 				Node: "test-node",
 				JWT:  signJWTWithStandardClaims(t, priv, map[string]interface{}{"wrong_claim": "test-node"}),
 			},
 			err: "Permission denied: Failed JWT claim assertion",
 		},
 		"good": {
-			request: agentpb.AutoConfigRequest{
+			request: autoconf.AutoConfigRequest{
 				Node: "test-node",
 				JWT:  signJWTWithStandardClaims(t, priv, map[string]interface{}{"consul_node_name": "test-node"}),
 			},
-			expected: agentpb.AutoConfigResponse{
+			expected: autoconf.AutoConfigResponse{
 				Config: &config.Config{
 					Datacenter:        "dc1",
 					PrimaryDatacenter: "dc1",
@@ -167,7 +167,7 @@ func TestAutoConfigInitialConfiguration(t *testing.T) {
 					},
 				},
 			},
-			patchResponse: func(t *testing.T, srv *Server, resp *agentpb.AutoConfigResponse) {
+			patchResponse: func(t *testing.T, srv *Server, resp *autoconf.AutoConfigResponse) {
 				// we are expecting an ACL token but cannot check anything for equality
 				// so here we check that it was set and overwrite it
 				require.NotNil(t, resp.Config)
@@ -250,7 +250,7 @@ func TestAutoConfigInitialConfiguration(t *testing.T) {
 
 	for testName, tcase := range cases {
 		t.Run(testName, func(t *testing.T) {
-			var reply agentpb.AutoConfigResponse
+			var reply autoconf.AutoConfigResponse
 			err := msgpackrpc.CallWithCodec(codec, "AutoConfig.InitialConfiguration", &tcase.request, &reply)
 			if tcase.err != "" {
 				testutil.RequireErrorContains(t, err, tcase.err)

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	pbconfig "github.com/hashicorp/consul/agent/agentpb/config"
 	"github.com/hashicorp/consul/agent/config"
+	pbconfig "github.com/hashicorp/consul/proto/config"
 	"github.com/stretchr/testify/require"
 )
 
