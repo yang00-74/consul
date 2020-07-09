@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/consul/lib"
 	"github.com/hashicorp/consul/tlsutil"
 	"github.com/hashicorp/consul/types"
+	"github.com/hashicorp/go-uuid"
 	"golang.org/x/time/rate"
 )
 
@@ -1684,6 +1685,55 @@ func (c *RuntimeConfig) ClientAddress() (unixAddr, httpAddr, httpsAddr string) {
 	}
 
 	return
+}
+
+func (c *RuntimeConfig) ConnectCAConfiguration() (*structs.CAConfiguration, error) {
+	if !c.ConnectEnabled {
+		return nil, nil
+	}
+
+	ca := &structs.CAConfiguration{
+		Provider: "consul",
+		Config: map[string]interface{}{
+			"RotationPeriod":      structs.DefaultCARotationPeriod,
+			"LeafCertTTL":         structs.DefaultLeafCertTTL,
+			"IntermediateCertTTL": structs.DefaultIntermediateCertTTL,
+		},
+	}
+
+	// Allow config to specify cluster_id provided it's a valid UUID. This is
+	// meant only for tests where a deterministic ID makes fixtures much simpler
+	// to work with but since it's only read on initial cluster bootstrap it's not
+	// that much of a liability in production. The worst a user could do is
+	// configure logically separate clusters with same ID by mistake but we can
+	// avoid documenting this is even an option.
+	if clusterID, ok := c.ConnectCAConfig["cluster_id"]; ok {
+		if cIDStr, ok := clusterID.(string); ok {
+			if _, err := uuid.ParseUUID(cIDStr); err == nil {
+				// Valid UUID configured, use that
+				ca.ClusterID = cIDStr
+			}
+		}
+
+		if ca.ClusterID == "" {
+			// If the tried to specify an ID but typoed it don't ignore as they will
+			// then bootstrap with a new ID and have to throw away the whole cluster
+			// and start again.
+			return nil, fmt.Errorf("cluster_id was supplied but was not a valid UUID")
+		}
+	}
+
+	if c.ConnectCAProvider != "" {
+		ca.Provider = c.ConnectCAProvider
+	}
+
+	// Merge connect CA Config regardless of provider (since there are some
+	// common config options valid to all like leaf TTL).
+	for k, v := range c.ConnectCAConfig {
+		ca.Config[k] = v
+	}
+
+	return ca, nil
 }
 
 func (c *RuntimeConfig) APIConfig(includeClientCerts bool) (*api.Config, error) {
