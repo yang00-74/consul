@@ -15,7 +15,7 @@ framework uses.
 ## Setup
 
 You'll need Terraform 0.12+, as well as AWS credentials (`AWS_ACCESS_KEY_ID`
-and `AWS_SECRET_ACCESS_KEY`) to create the Nomad cluster. Use
+and `AWS_SECRET_ACCESS_KEY`) to create the Consul cluster. Use
 [envchain](https://github.com/sorah/envchain) to store your AWS credentials.
 
 Optionally, create a `vars.tfvars` file and instantiate the variables with the values you'd like!
@@ -56,14 +56,14 @@ about the cluster:
 You can use Terraform outputs above to access nodes via ssh:
 
 ```sh
-ssh -i keys/nomad-e2e-*.pem ubuntu@${EC2_IP_ADDR}
+ssh -i keys/consul-e2e-*.pem ubuntu@${EC2_IP_ADDR}
 ```
 
 The Windows client runs OpenSSH for convenience, but has a different
 user and will drop you into a Powershell shell instead of bash:
 
 ```sh
-ssh -i keys/nomad-e2e-*.pem Administrator@${EC2_IP_ADDR}
+ssh -i keys/consul-e2e-*.pem Administrator@${EC2_IP_ADDR}
 ```
 
 ## Teardown

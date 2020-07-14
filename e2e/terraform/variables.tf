@@ -65,10 +65,6 @@ variable "public_ip" {
   description = "should ec2 instance have public ip?"
 }
 
-# variable "vpc_id" {
-#   description = "VPC ID"
-# }
-
 variable "vpc_az" {
   type        = list(string)
   description = "VPC Availability Zone"
