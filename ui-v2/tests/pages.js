@@ -118,7 +118,7 @@ const consulPolicyList = consulPolicyListFactory(
   morePopoverMenu
 );
 
-const page = pageFactory(clickable, attribute, is, authForm);
+const page = pageFactory(collection, clickable, attribute, is, authForm);
 
 // pages
 const create = function(appView) {
