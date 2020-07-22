@@ -31,6 +31,7 @@ module "vpc" {
 }
 
 module "consul-oss" {
+  # depends_on             = [module.vpc.vpc_id]
   source                 = "hashicorp/consul-oss/aws"
   version                = "0.1.3"
   allowed_inbound_cidrs  = var.allowed_inbound_cidrs

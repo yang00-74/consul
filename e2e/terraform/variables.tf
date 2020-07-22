@@ -61,7 +61,7 @@ variable "owner" {
 
 variable "public_ip" {
   type        = bool
-  default     = false
+  default     = true
   description = "should ec2 instance have public ip?"
 }
 
